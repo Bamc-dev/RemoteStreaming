@@ -13,7 +13,7 @@ public class MediaController {
 
 
     @MessageMapping("/play")
-    @SendToUser("/media/play")
+    @SendTo("/media/play")
     public boolean Play(@Payload Map<String, Boolean> playedSent)
     {
         if(playedSent.get("playedSent"))
@@ -22,7 +22,7 @@ public class MediaController {
             return true;
     }
     @MessageMapping("/setTime")
-    @SendToUser(destinations = "/media/setTime")
+    @SendTo("/media/setTime")
     public long SetTime(@Payload Map<String, Long> videoTime)
     {
         return videoTime.get("videoTime");
