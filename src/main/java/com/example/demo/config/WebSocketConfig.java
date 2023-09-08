@@ -13,12 +13,13 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void registerStompEndpoints(StompEndpointRegistry registry){
-        registry.addEndpoint("/socket").setAllowedOrigins("https://stream-ur-files.vercel.app/").withSockJS();
+        registry.addEndpoint("/socket").setAllowedOrigins("*");
     }
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry){
-        registry.setApplicationDestinationPrefixes("/api");
         registry.enableSimpleBroker("/media");
+        registry.setApplicationDestinationPrefixes("/api");
+
     }
 }
