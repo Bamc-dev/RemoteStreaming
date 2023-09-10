@@ -17,6 +17,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
 public class FileUploadService {
@@ -78,11 +79,35 @@ public class FileUploadService {
                 temp.setFileName(d.getFileName().toString().substring(9));
                 temp.setSize(0);
                 temp.setDownloadUri("/downloadFile/"+d.getFileName().toString().substring(0,8));
+                temp.setCode(d.getFileName().toString().substring(0,8));
                 filesList.add(temp);
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
         return filesList;
+    }
+
+    public boolean deleteFile(String fileCode)
+    {
+        AtomicBoolean deleted = new AtomicBoolean(false);
+        try {
+            Files.list(this.fileUploadLocation).forEach(d->
+            {
+                if(d.getFileName().toString().startsWith(fileCode))
+                {
+                    try {
+                        Files.delete(d);
+                        deleted.set(true);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            });
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return deleted.get();
+
     }
 }

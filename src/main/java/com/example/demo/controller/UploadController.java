@@ -31,6 +31,7 @@ public class UploadController {
         FileUploadResponse response = new FileUploadResponse();
         response.setFileName(fileName);
         response.setSize(size);
+        response.setCode(filecode);
         response.setDownloadUri("/downloadFile/" + filecode);
 
         return new ResponseEntity<>(response, HttpStatus.OK);
@@ -68,5 +69,16 @@ public class UploadController {
                 .contentType(MediaType.parseMediaType(contentType))
                 .header(HttpHeaders.CONTENT_DISPOSITION, headerValue)
                 .body(resource);
+    }
+
+    @DeleteMapping("/deleteFile/{fileCode}")
+    public ResponseEntity<?> deleteFile(@PathVariable("fileCode") String fileCode)
+    {
+        if (!fileUploadService.deleteFile(fileCode)) {
+            return ResponseEntity.badRequest().body(false);
+        } else {
+            return ResponseEntity.ok().body(true);
+        }
+
     }
 }
