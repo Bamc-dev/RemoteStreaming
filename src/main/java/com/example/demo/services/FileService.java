@@ -11,6 +11,7 @@ import org.springframework.core.io.Resource;
 import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -50,7 +51,8 @@ public class FileService {
             // Copy file to the target path (replacing existing file with the same name)
             String fileCode = RandomStringUtils.randomAlphanumeric(8);
             Path targetLocation = this.fileUploadLocation.resolve(fileCode+"-"+fileName);
-            Files.copy(file.getInputStream(), targetLocation, StandardCopyOption.REPLACE_EXISTING);
+            InputStream inputStream = file.getInputStream();
+            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
             return fileCode;
         } catch (IOException ex) {
             throw new RuntimeException(ex);
