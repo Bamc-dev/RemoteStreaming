@@ -21,6 +21,12 @@ public class MediaController {
         else
             return true;
     }
+    @MessageMapping("/video")
+    @SendTo("/media/video")
+    public String SentVideo(@Payload Map<String, String> videoLink)
+    {
+        return videoLink.get("videoLink");
+    }
     @MessageMapping("/setTime")
     @SendTo("/media/setTime")
     public long SetTime(@Payload Map<String, Long> videoTime)
