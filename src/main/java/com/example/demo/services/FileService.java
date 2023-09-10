@@ -20,12 +20,12 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
-public class FileUploadService {
+public class FileService {
     private final Path fileUploadLocation;
     private Path foundFile;
 
     @Autowired
-    public FileUploadService(FileStorageProperties fileStorageProperties) {
+    public FileService(FileStorageProperties fileStorageProperties) {
         this.fileUploadLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
 

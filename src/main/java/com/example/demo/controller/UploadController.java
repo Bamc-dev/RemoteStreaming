@@ -1,7 +1,7 @@
 package com.example.demo.controller;
 
 import com.example.demo.entities.FileUploadResponse;
-import com.example.demo.services.FileUploadService;
+import com.example.demo.services.FileService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
@@ -11,7 +11,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.io.IOException;
 import java.util.List;
@@ -19,14 +18,14 @@ import java.util.List;
 @RestController
 public class UploadController {
     @Autowired
-    private FileUploadService fileUploadService;
+    private FileService fileService;
 
     @PostMapping("/uploadFile")
     public ResponseEntity<FileUploadResponse> uploadFile(@RequestParam("file") MultipartFile file) {
         String fileName = StringUtils.cleanPath(file.getOriginalFilename());
         long size = file.getSize();
 
-        String filecode = fileUploadService.uploadFile(file);
+        String filecode = fileService.uploadFile(file);
 
         FileUploadResponse response = new FileUploadResponse();
         response.setFileName(fileName);
@@ -40,7 +39,7 @@ public class UploadController {
     public ResponseEntity<?> getAllFiles() {
 
         List<FileUploadResponse> resource = null;
-        resource = fileUploadService.getAllFiles();
+        resource = fileService.getAllFiles();
 
         if (resource == null) {
             return new ResponseEntity<>("Files not found", HttpStatus.NOT_FOUND);
@@ -53,7 +52,7 @@ public class UploadController {
 
         Resource resource = null;
         try {
-            resource = fileUploadService.getFileAsResource(fileCode);
+            resource = fileService.getFileAsResource(fileCode);
         } catch (IOException e) {
             return ResponseEntity.internalServerError().build();
         }
@@ -74,7 +73,7 @@ public class UploadController {
     @DeleteMapping("/deleteFile/{fileCode}")
     public ResponseEntity<?> deleteFile(@PathVariable("fileCode") String fileCode)
     {
-        if (!fileUploadService.deleteFile(fileCode)) {
+        if (!fileService.deleteFile(fileCode)) {
             return ResponseEntity.badRequest().body(false);
         } else {
             return ResponseEntity.ok().body(true);
