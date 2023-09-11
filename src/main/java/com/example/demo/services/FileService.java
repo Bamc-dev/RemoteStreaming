@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.example.demo.entities.FileChunk;
 import com.example.demo.entities.FileUploadResponse;
 import com.example.demo.properties.FileStorageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,14 +11,12 @@ import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
 import org.apache.commons.lang3.RandomStringUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 @Service
@@ -26,6 +25,8 @@ public class FileService {
     private final Path fileUploadLocation;
 
     private Path foundFile;
+
+    private List<FileChunk> fileChunks;
 
     @Autowired
     public FileService(FileStorageProperties fileStorageProperties) {
@@ -39,23 +40,34 @@ public class FileService {
         }
     }
 
-    public String uploadFile(MultipartFile file) {
-        // Renormalize the file name
-        String fileName = StringUtils.cleanPath(file.getOriginalFilename());
+    public void receiveChunk(FileChunk chunk) throws IOException {
+        fileChunks.add(chunk);
+    }
 
-        try {
-            // Verify if the file's name  is containing invalid characters
-            if (fileName.contains("..")) {
-                throw new RuntimeException("Sorry! File name is containing invalid path sequence " + fileName);
+    public void saveFile(String fileId, String extension) throws IOException {
+        List<FileChunk> chunksInOrder = fileChunks;
+
+        // Triez les chunks en fonction du numéro de chunk
+        Collections.sort(chunksInOrder, Comparator.comparingInt(FileChunk::getChunkNumber));
+
+        // Écrivez les chunks triés dans le fichier
+        Path fileUploadLocation = Paths.get("chemin/vers/votre/dossier/de/destination");
+        File fileUploadDirectory = fileUploadLocation.toFile();
+
+        // Vérifiez si le dossier de destination existe, sinon créez-le
+        if (!fileUploadDirectory.exists()) {
+            fileUploadDirectory.mkdirs();
+        }
+
+        try (FileOutputStream fileOutputStream = new FileOutputStream(fileUploadLocation.resolve(fileId + "." + extension).toFile())) {
+            for (FileChunk chunk : chunksInOrder) {
+                fileOutputStream.write(chunk.getData());
             }
-            // Copy file to the target path (replacing existing file with the same name)
-            String fileCode = RandomStringUtils.randomAlphanumeric(8);
-            Path targetLocation = this.fileUploadLocation.resolve(fileCode+"-"+fileName);
-            InputStream inputStream = file.getInputStream();
-            Files.copy(inputStream, targetLocation, StandardCopyOption.REPLACE_EXISTING);
-            return fileCode;
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
+        }
+
+        // Supprimez les chunks une fois qu'ils ont été écrits dans le fichier
+        for (FileChunk chunk : chunksInOrder) {
+            fileChunks.remove(chunk.getFileId() + "-" + chunk.getChunkNumber());
         }
     }
     public Resource getFileAsResource(String fileCode) throws IOException {
