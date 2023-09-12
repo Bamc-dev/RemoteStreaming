@@ -6,16 +6,12 @@ import com.example.demo.properties.FileStorageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.core.io.Resource;
-import org.apache.commons.lang3.RandomStringUtils;
 
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -24,15 +20,22 @@ public class FileService {
 
     private final Path fileUploadLocation;
 
-    private Path foundFile;
+    private final String chunkFolder;
 
-    private List<FileChunk> fileChunks;
+    private Path foundFile;
 
     @Autowired
     public FileService(FileStorageProperties fileStorageProperties) {
         this.fileUploadLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
+        this.chunkFolder = fileStorageProperties.getUploadChunk();
 
+        File dossier = new File(chunkFolder);
+
+        // Vérifie si le dossier n'existe pas
+        if (!dossier.exists()) {
+            dossier.mkdirs();
+        }
         try {
             Files.createDirectories(this.fileUploadLocation);
         } catch (Exception e) {
@@ -41,34 +44,40 @@ public class FileService {
     }
 
     public void receiveChunk(FileChunk chunk) throws IOException {
-        fileChunks.add(chunk);
+        String chunkPath = chunkFolder+ File.separator + chunk.getFileId() + File.separator + chunk.getChunkNumber();
+        new File(chunkFolder+ File.separator + chunk.getFileId()).mkdir();
+        try (FileOutputStream fos = new FileOutputStream(chunkPath)) {
+            fos.write(chunk.getData());
+        }
     }
 
     public void saveFile(String fileId, String extension) throws IOException {
-        List<FileChunk> chunksInOrder = fileChunks;
 
-        // Triez les chunks en fonction du numéro de chunk
-        Collections.sort(chunksInOrder, Comparator.comparingInt(FileChunk::getChunkNumber));
+        File output = new File(fileUploadLocation+File.separator+fileId+"."+extension);
+        try (FileOutputStream fos = new FileOutputStream(output)) {
+            File[] chunks = new File(chunkFolder + File.separator + fileId).listFiles();
 
-        // Écrivez les chunks triés dans le fichier
-        Path fileUploadLocation = Paths.get("chemin/vers/votre/dossier/de/destination");
-        File fileUploadDirectory = fileUploadLocation.toFile();
+            if (chunks != null) {
+                List<File> chunkList = new ArrayList<>();
+                for (File chunk : chunks) {
+                    chunkList.add(chunk);
+                }
 
-        // Vérifiez si le dossier de destination existe, sinon créez-le
-        if (!fileUploadDirectory.exists()) {
-            fileUploadDirectory.mkdirs();
-        }
+                chunkList.sort(Comparator.comparing(File::getName));
 
-        try (FileOutputStream fileOutputStream = new FileOutputStream(fileUploadLocation.resolve(fileId + "." + extension).toFile())) {
-            for (FileChunk chunk : chunksInOrder) {
-                fileOutputStream.write(chunk.getData());
+                for (File chunk : chunkList) {
+                    try (FileInputStream fis = new FileInputStream(chunk)) {
+                        byte[] buffer = new byte[50 * 1024 * 1024];
+                        int bytesRead;
+                        while ((bytesRead = fis.read(buffer)) != -1) {
+                            fos.write(buffer, 0, bytesRead);
+                        }
+                    }
+                    chunk.delete();
+                }
             }
         }
-
-        // Supprimez les chunks une fois qu'ils ont été écrits dans le fichier
-        for (FileChunk chunk : chunksInOrder) {
-            fileChunks.remove(chunk.getFileId() + "-" + chunk.getChunkNumber());
-        }
+        Files.delete(Path.of(chunkFolder + File.separator + fileId));
     }
     public Resource getFileAsResource(String fileCode) throws IOException {
         Path dirPath = this.fileUploadLocation;

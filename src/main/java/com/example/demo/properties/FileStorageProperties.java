@@ -8,6 +8,16 @@ import org.springframework.stereotype.Component;
 public class FileStorageProperties {
     private String uploadDir;
 
+    private String uploadChunk;
+
+    public String getUploadChunk() {
+        return uploadChunk;
+    }
+
+    public void setUploadChunk(String uploadChunk) {
+        this.uploadChunk = uploadChunk;
+    }
+
     public String getUploadDir() {
         return uploadDir;
     }
