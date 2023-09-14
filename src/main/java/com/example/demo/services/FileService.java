@@ -7,7 +7,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
-
 import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -55,28 +54,27 @@ public class FileService {
 
         File output = new File(fileUploadLocation+File.separator+fileId+"."+extension);
         try (FileOutputStream fos = new FileOutputStream(output)) {
-            File[] chunks = new File(chunkFolder + File.separator + fileId).listFiles();
+            List<File> chunks = new ArrayList<>(Arrays.stream(new File(chunkFolder + File.separator + fileId).listFiles()).toList());
+            chunks.sort(new Comparator<File>() {
+                @Override
+                public int compare(File o1, File o2) {
+                    return Integer.compare(Integer.parseInt(o1.getName()), Integer.parseInt(o2.getName()));
+                }
+            });
 
             if (chunks != null) {
-                List<File> chunkList = new ArrayList<>();
-                for (File chunk : chunks) {
-                    chunkList.add(chunk);
-                }
-
-                chunkList.sort(Comparator.comparing(File::getName));
-
-                for (File chunk : chunkList) {
-                    try (FileInputStream fis = new FileInputStream(chunk)) {
-                        byte[] buffer = new byte[50 * 1024 * 1024];
+                for (int i = 0; i < chunks.size(); i++) {
+                    try (FileInputStream fis = new FileInputStream(chunks.get(i))) {
+                        byte[] buffer = new byte[4 * 1024 * 1024];
                         int bytesRead;
                         while ((bytesRead = fis.read(buffer)) != -1) {
                             fos.write(buffer, 0, bytesRead);
                         }
                     }
-                    chunk.delete();
                 }
             }
         }
+        this.supprimerRepertoire(new File(chunkFolder+File.separator+fileId));
         Files.delete(Path.of(chunkFolder + File.separator + fileId));
     }
     public Resource getFileAsResource(String fileCode) throws IOException {
@@ -133,6 +131,22 @@ public class FileService {
             throw new RuntimeException(e);
         }
         return deleted.get();
-
+    }
+    public boolean supprimerRepertoire(File repertoire) {
+        if (!repertoire.exists()) {
+            return true;
+        }
+        if (repertoire.isDirectory()) {
+            File[] fichiers = repertoire.listFiles();
+            if (fichiers != null) {
+                for (File fichier : fichiers) {
+                    boolean success = supprimerRepertoire(fichier);
+                    if (!success) {
+                        return false;
+                    }
+                }
+            }
+        }
+        return repertoire.delete();
     }
 }
