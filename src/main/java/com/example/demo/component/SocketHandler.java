@@ -4,6 +4,7 @@ import com.google.gson.Gson;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
+import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.handler.TextWebSocketHandler;
 
 import java.io.IOException;
@@ -30,5 +31,10 @@ public class SocketHandler extends TextWebSocketHandler {
         //the messages will be broadcasted to all users.
         sessions.add(session);
     }
+    @Override
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
+        sessions.remove(session);
+    }
+
 }
 
