@@ -74,7 +74,6 @@ public class FileService {
                 }
             }
         }
-        this.supprimerRepertoire(new File(chunkFolder+File.separator+fileId));
         Files.delete(Path.of(chunkFolder + File.separator + fileId));
     }
     public Resource getFileAsResource(String fileCode) throws IOException {
@@ -126,6 +125,7 @@ public class FileService {
                         throw new RuntimeException(e);
                     }
                 }
+                this.supprimerRepertoire(new File(chunkFolder+File.separator+fileCode));
             });
         } catch (IOException e) {
             throw new RuntimeException(e);
