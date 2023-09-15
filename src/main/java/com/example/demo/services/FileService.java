@@ -5,6 +5,7 @@ import com.example.demo.entities.FileUploadResponse;
 import com.example.demo.properties.FileStorageProperties;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.UrlResource;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Service;
 import org.springframework.core.io.Resource;
 import java.io.*;
@@ -22,13 +23,16 @@ public class FileService {
     private final String chunkFolder;
 
     private Path foundFile;
+    private final ThreadPoolTaskExecutor executor;
 
     @Autowired
     public FileService(FileStorageProperties fileStorageProperties) {
         this.fileUploadLocation = Paths.get(fileStorageProperties.getUploadDir())
                 .toAbsolutePath().normalize();
         this.chunkFolder = fileStorageProperties.getUploadChunk();
-
+        executor = new ThreadPoolTaskExecutor();
+        executor.setCorePoolSize(2); // Définir le nombre de threads dans le pool
+        executor.initialize();
         File dossier = new File(chunkFolder);
 
         // Vérifie si le dossier n'existe pas
@@ -45,9 +49,20 @@ public class FileService {
     public void receiveChunk(FileChunk chunk) throws IOException {
         String chunkPath = chunkFolder+ File.separator + chunk.getFileId() + File.separator + chunk.getChunkNumber();
         new File(chunkFolder+ File.separator + chunk.getFileId()).mkdir();
-        try (FileOutputStream fos = new FileOutputStream(chunkPath)) {
-            fos.write(chunk.getData());
-        }
+        executor.execute(()->
+        {
+            try (FileOutputStream fos = new FileOutputStream(chunkPath)) {
+                try {
+                    fos.write(chunk.getData());
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+            } catch (FileNotFoundException e) {
+                throw new RuntimeException(e);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
     }
 
     public void saveFile(String fileId, String extension) throws IOException {
