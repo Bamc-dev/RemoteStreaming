@@ -65,7 +65,7 @@ public class FileService {
         });
     }
 
-    public void saveFile(String fileId, String extension) throws IOException {
+    public void saveFile(String fileId, String extension){
 
         File output = new File(fileUploadLocation+File.separator+fileId+"."+extension);
         try (FileOutputStream fos = new FileOutputStream(output)) {
@@ -88,8 +88,16 @@ public class FileService {
                     }
                 }
             }
+        } catch (FileNotFoundException e) {
+            throw new RuntimeException(e);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
-        Files.delete(Path.of(chunkFolder + File.separator + fileId));
+        try {
+            Files.delete(Path.of(chunkFolder + File.separator + fileId));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
     public Resource getFileAsResource(String fileCode) throws IOException {
         Path dirPath = this.fileUploadLocation;
