@@ -80,7 +80,7 @@ public class FileService {
             if (chunks != null) {
                 for (int i = 0; i < chunks.size(); i++) {
                     try (FileInputStream fis = new FileInputStream(chunks.get(i))) {
-                        byte[] buffer = new byte[4 * 1024 * 1024];
+                        byte[] buffer = new byte[1024];
                         int bytesRead;
                         while ((bytesRead = fis.read(buffer)) != -1) {
                             fos.write(buffer, 0, bytesRead);
