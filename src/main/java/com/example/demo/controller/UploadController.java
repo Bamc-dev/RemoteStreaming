@@ -77,11 +77,7 @@ public class UploadController {
     }
     @PostMapping("/saveFile/{fileId}/{extension}")
     public ResponseEntity<String> saveFile(@PathVariable String fileId, @PathVariable String extension) {
-        try {
-            fileService.saveFile(fileId, extension);
-            return ResponseEntity.ok("File saved successfully.");
-        } catch (IOException e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error saving file.");
-        }
+        fileService.saveFile(fileId, extension);
+        return ResponseEntity.ok("File saved successfully.");
     }
 }

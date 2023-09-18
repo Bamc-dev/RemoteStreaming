@@ -86,6 +86,7 @@ public class FileService {
                             fos.write(buffer, 0, bytesRead);
                         }
                     }
+                    chunks.get(i).delete();
                 }
             }
         } catch (FileNotFoundException e) {
